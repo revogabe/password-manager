@@ -2,10 +2,8 @@ use std::io::Write;
 use std::io::Read;
 use std::fs::File;
 use std::{path::Path, io};
-use clipboard::ClipboardContext;
-use clipboard::ClipboardProvider;
+use arboard::Clipboard;
 
-extern crate clipboard;
 use crate::PasswordEntry;
 
 const PASSWORD_FILE: &str = "passwords.json";
@@ -65,22 +63,10 @@ pub(crate) fn search_password(query: String) -> io::Result<()> {
 pub(crate) fn copy_to_clipboard(url: String) -> io::Result<()> {
     let passwords: Vec<PasswordEntry> = read_passwords()?;
 
-    for entry in &passwords {
+    for entry in passwords {
         if entry.url == url {
-            let mut ctx: ClipboardContext = match ClipboardProvider::new() {
-                Ok(ctx) => ctx,
-                Err(e) => {
-                    eprintln!("Erro ao acessar a área de transferência: {:?}", e);
-                    return Err(io::Error::new(io::ErrorKind::Other, "Erro ao acessar a área de transferência"));
-                }
-            };
-
-            if ctx.set_contents(entry.password.clone()).is_err() {
-                eprintln!("Falha ao copiar para a área de transferência.");
-                return Err(io::Error::new(io::ErrorKind::Other, "Falha ao copiar para a área de transferência"));
-            }
-
-            println!("Senha copiada para a área de transferência para a URL: {}", url);
+            let mut clipboard: Clipboard = Clipboard::new().unwrap();
+            clipboard.set_text(entry.password).unwrap();
             return Ok(());
         }
     }
